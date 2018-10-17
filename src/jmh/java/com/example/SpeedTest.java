@@ -346,6 +346,25 @@ public class SpeedTest {
         public Class<ResponseAV> responseClazz;
     }
 
+    @State(Scope.Benchmark)
+    public static class StagGson {
+
+        @Setup
+        public void setupTrial() throws Exception {
+            gson = new GsonBuilder()
+                    .registerTypeAdapterFactory(new Stag.Factory())
+                    .create();
+            URL url = Resources.getResource("largesample.json");
+            json = Resources.toString(url, Charsets.UTF_8);
+            response = gson
+                    .fromJson(json, Response.class);
+        }
+
+        public Gson gson;
+        public String json;
+        public Response response;
+    }
+
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
@@ -436,6 +455,13 @@ public class SpeedTest {
         param.kryo.writeObject(output, param.response);
         output.flush();
         return stream.toByteArray();
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public String stag_gson_toJson(StagGson param) throws IOException {
+        return param.gson.toJson(param.response);
     }
 
     @Benchmark
@@ -569,6 +595,13 @@ public class SpeedTest {
     @OutputTimeUnit(TimeUnit.SECONDS)
     public ResponseAV gson_autovalue_buffer_fromJson_minified(AVGsonBuffer param) throws IOException {
         return param.gson.fromJson(param.minifiedSource, ResponseAV.class);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response stag_gson_fromJson(StagGson param) throws IOException {
+        return param.gson.fromJson(param.json, Response.class);
     }
 
     @Benchmark
